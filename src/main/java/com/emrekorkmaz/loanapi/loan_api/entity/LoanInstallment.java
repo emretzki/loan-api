@@ -1,46 +1,40 @@
 package com.emrekorkmaz.loanapi.loan_api.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "loans")
+@Table(name = "loan_installments")
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
-public class Loan {
+public class LoanInstallment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;  // Primary Key
 
     @ManyToOne
-    @JoinColumn(name = "customer_id")  // Foreign Key
-    private Customer customer;
+    @JoinColumn(name = "loan_id")  // Foreign Key
+    private Loan loan;
 
     @Column(nullable = false)
-    private BigDecimal loanAmount;  // Kredi miktarı
+    private BigDecimal amount;  // Taksit miktarı
 
     @Column(nullable = false)
-    private int numberOfInstallments;
+    private BigDecimal paidAmount;  // Ödenen miktar
 
     @Column(nullable = false)
-    private LocalDate createDate;  // Kredi başlangıç tarihi
+    private LocalDate dueDate;  // Ödeme tarihi
 
     @Column(nullable = false)
-    private Boolean isPaid;
+    private LocalDate paymentDate;  // Gerçek ödeme tarihi
 
     @Column(nullable = false)
-    private BigDecimal interestRate;  // Faiz oranı
-
-
-
-
-
+    private Boolean isPaid;  // Ödenip ödenmediği bilgisi
 }

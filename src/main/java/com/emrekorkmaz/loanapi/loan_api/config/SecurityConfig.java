@@ -20,7 +20,7 @@ public class SecurityConfig {
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/customers/**").permitAll()
                         .requestMatchers("/loans/**").permitAll()
-                        .requestMatchers("/loanInstallments/**").permitAll()
+                        .requestMatchers("/loan-installments/**").permitAll()
                         .requestMatchers("/").permitAll()
                         .anyRequest().authenticated())
                 .headers(headers -> headers
