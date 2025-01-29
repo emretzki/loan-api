@@ -4,12 +4,17 @@ import com.emrekorkmaz.loanapi.loan_api.dto.loanDto.LoanRequestDto;
 import com.emrekorkmaz.loanapi.loan_api.dto.loanDto.LoanResponseDto;
 import com.emrekorkmaz.loanapi.loan_api.entity.Customer;
 import com.emrekorkmaz.loanapi.loan_api.entity.Loan;
+import com.emrekorkmaz.loanapi.loan_api.entity.LoanInstallment;
 import com.emrekorkmaz.loanapi.loan_api.repository.CustomerRepository;
+import com.emrekorkmaz.loanapi.loan_api.repository.LoanInstallmentRepository;
 import com.emrekorkmaz.loanapi.loan_api.repository.LoanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,28 +24,72 @@ public class LoanServiceImpl implements LoanService {
 
     private final LoanRepository loanRepository;
     private final CustomerRepository customerRepository;
+    private final LoanInstallmentRepository loanInstallmentRepository;
 
     @Autowired
-    public LoanServiceImpl(LoanRepository loanRepository, CustomerRepository customerRepository) {
+    public LoanServiceImpl(LoanRepository loanRepository, CustomerRepository customerRepository, LoanInstallmentRepository loanInstallmentRepository) {
         this.loanRepository = loanRepository;
+        this.loanInstallmentRepository = loanInstallmentRepository;
         this.customerRepository = customerRepository;
     }
 
     @Override
     public LoanResponseDto createLoan(LoanRequestDto loanRequestDto) {
-        // Müşteri doğrulaması yapalım
+        // Müşteri doğrulaması
         Customer customer = customerRepository.findById(loanRequestDto.getCustomerId())
                 .orElseThrow(() -> new IllegalArgumentException("Customer with ID " + loanRequestDto.getCustomerId() + " not found"));
 
-        // Yeni Loan nesnesini oluştur
-        Loan loan = new Loan();
-        loan.setAmount(loanRequestDto.getAmount());
-        loan.setInterestRate(loanRequestDto.getInterestRate());
-        loan.setStartDate(loanRequestDto.getStartDate());
-        loan.setCustomer(customer);  // Customer'ı ata
+        // Credit limit check
+        // Eğer loanRequestDto.getAmount() ve loanRequestDto.getInterestRate() double ise, BigDecimal.valueOf() kullanmalısınız
+        BigDecimal loanAmount = loanRequestDto.getLoanAmount(); // Burada valueOf kullanıyoruz
+        BigDecimal interestRate = loanRequestDto.getInterestRate();; // interestRate için de aynı şekilde
 
-        // Loan'ı kaydedelim ve LoanResponseDto'yu döndürelim
+        // Total loan amount hesaplama: loanAmount * (1 + interestRate)
+        BigDecimal totalLoanAmount = loanAmount.multiply(BigDecimal.ONE.add(interestRate));
+
+        // Credit limit kontrolü: customer.getCreditLimit() - customer.getUsedCreditLimit() < totalLoanAmount
+        BigDecimal remainingCredit = customer.getCreditLimit().subtract(customer.getUsedCreditLimit());
+
+        System.out.println("Customer Credit Limit: " + customer.getCreditLimit());
+        System.out.println("Customer Used Credit Limit: " + customer.getUsedCreditLimit());
+        System.out.println("Remaining Credit: " + remainingCredit);
+        System.out.println("Total Loan Amount: " + totalLoanAmount);
+
+        if (remainingCredit.compareTo(totalLoanAmount) < 0) {
+            throw new IllegalArgumentException("Customer does not have enough credit limit for this loan.");
+        }
+
+        // Installment number validation
+        if (!List.of(6, 9, 12, 24).contains(loanRequestDto.getNumberOfInstallments())) {
+            throw new IllegalArgumentException("Installment number must be 6, 9, 12, or 24.");
+        }
+
+        // Interest rate validation
+        if (loanRequestDto.getInterestRate().compareTo(BigDecimal.valueOf(0.1)) < 0 ||
+                loanRequestDto.getInterestRate().compareTo(BigDecimal.valueOf(0.5)) > 0) {
+            throw new IllegalArgumentException("Interest rate must be between 0.1 and 0.5.");
+        }
+
+
+        // Create the loan
+        Loan loan = new Loan();
+        loan.setLoanAmount(totalLoanAmount); // Toplam kredi tutarını set ediyoruz
+        loan.setInterestRate(interestRate);
+        loan.setCreateDate(loanRequestDto.getCreateDate());
+        loan.setCustomer(customer);
+        loan.setIsPaid(false);
+
+        // Save the loan
         Loan savedLoan = loanRepository.save(loan);
+
+        // Create installments
+        createInstallments(savedLoan.getId(), loanRequestDto.getNumberOfInstallments());
+
+        // Update customer's used credit limit
+        BigDecimal usedCreditLimit = customer.getUsedCreditLimit().add(totalLoanAmount);
+        customer.setUsedCreditLimit(usedCreditLimit);
+        customerRepository.save(customer);
+
         return new LoanResponseDto(savedLoan);
     }
 
@@ -65,9 +114,9 @@ public class LoanServiceImpl implements LoanService {
                 .orElseThrow(() -> new IllegalArgumentException("Loan with ID " + id + " not found"));
 
         // Güncelleme işlemleri
-        loan.setAmount(loanRequestDto.getAmount());
+        loan.setLoanAmount(loanRequestDto.getLoanAmount());
         loan.setInterestRate(loanRequestDto.getInterestRate());
-        loan.setStartDate(loanRequestDto.getStartDate());
+        loan.setCreateDate(loanRequestDto.getCreateDate());
 
         // Müşteri doğrulaması
         Customer customer = customerRepository.findById(loanRequestDto.getCustomerId())
@@ -77,5 +126,32 @@ public class LoanServiceImpl implements LoanService {
         // Güncellenmiş loan'ı kaydedelim ve döndürelim
         Loan updatedLoan = loanRepository.save(loan);
         return new LoanResponseDto(updatedLoan);
+    }
+
+    @Override
+    public void createInstallments(Long loanId, int numberOfInstallments) {
+        // Kredi ve taksit sayısını alıyoruz
+        Loan loan = loanRepository.findById(loanId)
+                .orElseThrow(() -> new IllegalArgumentException("Loan with ID " + loanId + " not found"));
+
+        BigDecimal installmentAmount = loan.getLoanAmount().divide(BigDecimal.valueOf(numberOfInstallments), 2, RoundingMode.HALF_UP);
+
+        // İlk taksit tarihi, loan createDate'in 1. günü olacak şekilde ayarlanır
+        LocalDate dueDate = loan.getCreateDate().withDayOfMonth(1).plusMonths(1); // İlk taksit 1. gün
+
+        for (int i = 1; i <= numberOfInstallments; i++) {
+            LoanInstallment installment = new LoanInstallment();
+            installment.setLoan(loan);
+            installment.setAmount(installmentAmount);
+            installment.setDueDate(dueDate);
+            installment.setIsPaid(false);  // Başlangıçta ödenmemiş olarak
+            installment.setPaidAmount(BigDecimal.ZERO);  // Ödenen tutar sıfır
+            installment.setPaymentDate(dueDate);  // Ödeme tarihi, taksitin vade tarihi olmalı
+
+            loanInstallmentRepository.save(installment);
+
+            // Taksit tarihini bir sonraki ayın 1. günü olarak güncelle
+            dueDate = dueDate.plusMonths(1);
+        }
     }
 }

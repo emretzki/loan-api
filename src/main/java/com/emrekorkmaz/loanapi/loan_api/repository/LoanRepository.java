@@ -18,11 +18,11 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     // Boolean isPaid: List<Loan> findByIsPaid(Boolean isPaid);
 
     // Başlangıç tarihi belirli bir aralıkta olan kredileri listeleme
-    List<Loan> findByStartDateBetween(LocalDate startDate, LocalDate endDate);
+    List<Loan> findByCreateDateBetween(LocalDate startDate, LocalDate endDate);
 
     // Faiz oranına göre kredileri listeleme
     List<Loan> findByInterestRateLessThanEqual(BigDecimal interestRate);
 
     // Miktarına göre kredileri listeleme
-    List<Loan> findByAmountGreaterThan(BigDecimal amount);
+    List<Loan> findByLoanAmountGreaterThan(BigDecimal amount);
 }

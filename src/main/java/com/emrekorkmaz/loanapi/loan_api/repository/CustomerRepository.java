@@ -4,6 +4,7 @@ import com.emrekorkmaz.loanapi.loan_api.entity.Customer;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,8 +15,8 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     Optional<Customer> findByNameAndSurname(String name, String surname);
 
     // Belirli bir kredi limitine sahip müşterileri bulma
-    List<Customer> findByCreditLimitGreaterThan(Double creditLimit);
+    List<Customer> findByCreditLimitGreaterThan(BigDecimal creditLimit);
 
     // ID ve limit kontrolü
-    Optional<Customer> findByIdAndCreditLimitGreaterThanEqual(Long id, Double creditLimit);
+    Optional<Customer> findByIdAndCreditLimitGreaterThanEqual(Long id, BigDecimal creditLimit);
 }

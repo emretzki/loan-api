@@ -34,7 +34,7 @@ public class Loan {
     private LocalDate createDate;  // Kredi başlangıç tarihi
 
     @Column(nullable = false)
-    private Boolean isPaid;
+    private Boolean isPaid = false;
 
     @Column(nullable = false)
     private BigDecimal interestRate;  // Faiz oranı

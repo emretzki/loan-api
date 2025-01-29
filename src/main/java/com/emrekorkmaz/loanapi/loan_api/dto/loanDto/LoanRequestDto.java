@@ -13,16 +13,23 @@ import java.time.LocalDate;
 public class LoanRequestDto {
 
     @NotNull
+    private Long customerId;  // Müşteri ID'si
+
+    @NotNull
     @Positive
-    private BigDecimal amount;  // Kredi miktarı
+    private BigDecimal loanAmount;  // Kredi miktarı
+
+    @NotNull
+    private int numberOfInstallments;
+
+    @NotNull
+    private LocalDate createDate;  // Kredi başlangıç tarihi
+
+    @NotNull
+    private Boolean isPaid;
 
     @NotNull
     @Positive
     private BigDecimal interestRate;  // Faiz oranı
 
-    @NotNull
-    private LocalDate startDate;  // Kredi başlangıç tarihi
-
-    @NotNull
-    private Long customerId;  // Müşteri ID'si
 }

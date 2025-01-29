@@ -19,9 +19,9 @@ public class LoanResponseDto {
 
     public LoanResponseDto(Loan loan) {
         this.id = loan.getId();
-        this.amount = loan.getAmount();
+        this.amount = loan.getLoanAmount();
         this.interestRate = loan.getInterestRate();
-        this.startDate = loan.getStartDate();
+        this.startDate = loan.getCreateDate();
 
         // Eğer customer null ise, customerId'yi null yapıyoruz
         if (loan.getCustomer() != null) {
