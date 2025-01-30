@@ -2,6 +2,8 @@ package com.emrekorkmaz.loanapi.loan_api.controller;
 
 import com.emrekorkmaz.loanapi.loan_api.dto.loanDto.LoanRequestDto;
 import com.emrekorkmaz.loanapi.loan_api.dto.loanDto.LoanResponseDto;
+import com.emrekorkmaz.loanapi.loan_api.dto.paymentDto.PaymentRequestDto;
+import com.emrekorkmaz.loanapi.loan_api.dto.paymentDto.PaymentResponseDto;
 import com.emrekorkmaz.loanapi.loan_api.service.LoanService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,6 +30,12 @@ public class LoanController {
         return new ResponseEntity<>(loanResponse, HttpStatus.CREATED);
     }
 
+    @PostMapping("/pay-loan")
+    public ResponseEntity<PaymentResponseDto> payLoan(@RequestBody PaymentRequestDto paymentRequest) {
+        PaymentResponseDto response = loanService.payLoan(paymentRequest);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping
     public ResponseEntity<List<LoanResponseDto>> getAllLoans() {
         List<LoanResponseDto> loans = loanService.getAllLoans();
@@ -38,6 +46,27 @@ public class LoanController {
     public ResponseEntity<LoanResponseDto> getLoanById(@PathVariable Long id) {
         LoanResponseDto loanResponse = loanService.getLoanById(id);
         return ResponseEntity.ok(loanResponse);
+    }
+
+    // Belirli bir müşteri için loanları getir
+    @GetMapping("/customer/{customerId}")
+    public ResponseEntity<List<LoanResponseDto>> getLoansByCustomer(@PathVariable Long customerId) {
+        List<LoanResponseDto> loans = loanService.getLoansByCustomer(customerId);
+        return ResponseEntity.ok(loans);
+    }
+
+    // Taksit sayısına göre loanları getir
+    @GetMapping("/installments/{numberOfInstallments}")
+    public ResponseEntity<List<LoanResponseDto>> getLoansByInstallments(@PathVariable Integer numberOfInstallments) {
+        List<LoanResponseDto> loans = loanService.getLoansByInstallments(numberOfInstallments);
+        return ResponseEntity.ok(loans);
+    }
+
+    // Ödeme durumuna göre loanları getir
+    @GetMapping("/status/{isPaid}")
+    public ResponseEntity<List<LoanResponseDto>> getLoansByStatus(@PathVariable Boolean isPaid) {
+        List<LoanResponseDto> loans = loanService.getLoansByStatus(isPaid);
+        return ResponseEntity.ok(loans);
     }
 
     @PutMapping("/{id}")

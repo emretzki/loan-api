@@ -12,16 +12,18 @@ import java.time.LocalDate;
 public class LoanResponseDto {
 
     private Long id;  // Kredi ID'si
-    private BigDecimal amount;  // Kredi miktarı
+    private BigDecimal loanAmount;  // Kredi miktarı
     private BigDecimal interestRate;  // Faiz oranı
-    private LocalDate startDate;  // Kredi başlangıç tarihi
+    private LocalDate createDate;  // Kredi başlangıç tarihi
+    private int numberOfInstallments;
     private Long customerId;  // Müşteri ID'si
 
     public LoanResponseDto(Loan loan) {
         this.id = loan.getId();
-        this.amount = loan.getLoanAmount();
+        this.loanAmount = loan.getLoanAmount();
         this.interestRate = loan.getInterestRate();
-        this.startDate = loan.getCreateDate();
+        this.createDate = loan.getCreateDate();
+        this.numberOfInstallments = loan.getNumberOfInstallments();
 
         // Eğer customer null ise, customerId'yi null yapıyoruz
         if (loan.getCustomer() != null) {

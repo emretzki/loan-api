@@ -2,6 +2,8 @@ package com.emrekorkmaz.loanapi.loan_api.service;
 
 import com.emrekorkmaz.loanapi.loan_api.dto.loanDto.LoanRequestDto;
 import com.emrekorkmaz.loanapi.loan_api.dto.loanDto.LoanResponseDto;
+import com.emrekorkmaz.loanapi.loan_api.dto.paymentDto.PaymentRequestDto;
+import com.emrekorkmaz.loanapi.loan_api.dto.paymentDto.PaymentResponseDto;
 import com.emrekorkmaz.loanapi.loan_api.entity.Customer;
 import com.emrekorkmaz.loanapi.loan_api.entity.Loan;
 import com.emrekorkmaz.loanapi.loan_api.entity.LoanInstallment;
@@ -76,6 +78,7 @@ public class LoanServiceImpl implements LoanService {
         loan.setLoanAmount(totalLoanAmount); // Toplam kredi tutarını set ediyoruz
         loan.setInterestRate(interestRate);
         loan.setCreateDate(loanRequestDto.getCreateDate());
+        loan.setNumberOfInstallments(loanRequestDto.getNumberOfInstallments());
         loan.setCustomer(customer);
         loan.setIsPaid(false);
 
@@ -106,6 +109,24 @@ public class LoanServiceImpl implements LoanService {
         Loan loan = loanRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Loan with ID " + id + " not found"));
         return new LoanResponseDto(loan);
+    }
+
+    @Override
+    public List<LoanResponseDto> getLoansByCustomer(Long customerId) {
+        List<Loan> loans = loanRepository.findByCustomerId(customerId);
+        return loans.stream().map(LoanResponseDto::new).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<LoanResponseDto> getLoansByInstallments(Integer numberOfInstallments) {
+        List<Loan> loans = loanRepository.findByNumberOfInstallments(numberOfInstallments);
+        return loans.stream().map(LoanResponseDto::new).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<LoanResponseDto> getLoansByStatus(Boolean isPaid) {
+        List<Loan> loans = loanRepository.findByIsPaid(isPaid);
+        return loans.stream().map(LoanResponseDto::new).collect(Collectors.toList());
     }
 
     @Override
@@ -153,5 +174,10 @@ public class LoanServiceImpl implements LoanService {
             // Taksit tarihini bir sonraki ayın 1. günü olarak güncelle
             dueDate = dueDate.plusMonths(1);
         }
+    }
+
+    @Override
+    public PaymentResponseDto payLoan(PaymentRequestDto paymentRequest) {
+        return null;
     }
 }

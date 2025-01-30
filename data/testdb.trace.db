@@ -367,3 +367,9 @@ truncate table customers [90106-232]
 	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
 	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
 	at java.base/java.lang.Thread.run(Thread.java:840)
+2025-01-30 20:17:47.442346+03:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "delete [*]* from loan_installment"; expected "identifier"; SQL statement:
+delete * from loan_installment [42001-232]
+2025-01-30 20:17:53.912581+03:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "delete [*]* from loans"; expected "identifier"; SQL statement:
+delete * from loans [42001-232]

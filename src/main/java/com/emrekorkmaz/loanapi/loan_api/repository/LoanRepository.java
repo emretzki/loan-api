@@ -11,18 +11,16 @@ import java.util.List;
 @Repository
 public interface LoanRepository extends JpaRepository<Loan, Long> {
 
-    // Müşteri ID'sine göre tüm kredileri listeleme
     List<Loan> findByCustomerId(Long customerId);
 
-    // Ödenmemiş kredileri listeleme (isPaid veya benzeri bir alan varsa)
-    // Boolean isPaid: List<Loan> findByIsPaid(Boolean isPaid);
-
-    // Başlangıç tarihi belirli bir aralıkta olan kredileri listeleme
     List<Loan> findByCreateDateBetween(LocalDate startDate, LocalDate endDate);
 
-    // Faiz oranına göre kredileri listeleme
     List<Loan> findByInterestRateLessThanEqual(BigDecimal interestRate);
 
-    // Miktarına göre kredileri listeleme
+
+    List<Loan> findByNumberOfInstallments(Integer numberOfInstallments);
+
+    List<Loan> findByIsPaid(Boolean isPaid);
+
     List<Loan> findByLoanAmountGreaterThan(BigDecimal amount);
 }
