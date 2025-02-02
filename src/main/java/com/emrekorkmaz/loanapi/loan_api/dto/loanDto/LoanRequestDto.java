@@ -25,11 +25,11 @@ public class LoanRequestDto {
     @NotNull
     private LocalDate createDate;  // Kredi başlangıç tarihi
 
-    @NotNull
-    private Boolean isPaid;
+    //@NotNull
+    //private Boolean isPaid;
 
-    @NotNull
-    @Positive
-    private BigDecimal interestRate;  // Faiz oranı
+    //@NotNull
+    //@Positive
+    //private BigDecimal interestRate;  // Faiz oranı
 
 }

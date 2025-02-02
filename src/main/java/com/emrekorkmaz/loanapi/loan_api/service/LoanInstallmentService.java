@@ -14,4 +14,7 @@ public interface LoanInstallmentService {
     LoanInstallmentResponseDto getLoanInstallmentById(Long id);
 
     LoanInstallmentResponseDto updateLoanInstallment(Long id, LoanInstallmentRequestDto loanInstallmentRequestDto);
+
+    List<LoanInstallmentResponseDto> getLoanInstallmentsByLoanId(Long loanId);
+
 }

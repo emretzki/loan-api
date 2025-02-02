@@ -14,7 +14,6 @@ import java.time.LocalDate;
 @Setter
 @NoArgsConstructor
 public class LoanInstallment {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;  // Primary Key

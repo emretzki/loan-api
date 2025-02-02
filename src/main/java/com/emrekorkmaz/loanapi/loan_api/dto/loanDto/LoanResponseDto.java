@@ -16,6 +16,7 @@ public class LoanResponseDto {
     private BigDecimal interestRate;  // Faiz oranı
     private LocalDate createDate;  // Kredi başlangıç tarihi
     private int numberOfInstallments;
+    private boolean isPaid;
     private Long customerId;  // Müşteri ID'si
 
     public LoanResponseDto(Loan loan) {
@@ -24,6 +25,7 @@ public class LoanResponseDto {
         this.interestRate = loan.getInterestRate();
         this.createDate = loan.getCreateDate();
         this.numberOfInstallments = loan.getNumberOfInstallments();
+        this.isPaid = loan.getIsPaid();
 
         // Eğer customer null ise, customerId'yi null yapıyoruz
         if (loan.getCustomer() != null) {

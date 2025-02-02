@@ -38,9 +38,4 @@ public class Loan {
 
     @Column(nullable = false)
     private BigDecimal interestRate;  // Faiz oranı
-
-
-
-
-
 }

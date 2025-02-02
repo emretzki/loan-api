@@ -73,5 +73,12 @@ public class LoanInstallmentServiceImpl implements LoanInstallmentService {
         return new LoanInstallmentResponseDto(loanInstallment);
     }
 
+    @Override
+    public List<LoanInstallmentResponseDto> getLoanInstallmentsByLoanId(Long loanId) {
+        List<LoanInstallment> loanInstallments = loanInstallmentRepository.findByLoanId(loanId);
 
+        return loanInstallments.stream()
+                .map(LoanInstallmentResponseDto::new)
+                .collect(Collectors.toList());
+    }
 }

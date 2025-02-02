@@ -51,4 +51,12 @@ public class LoanInstallmentController {
         LoanInstallmentResponseDto loanInstallmentResponse = loanInstallmentService.updateLoanInstallment(id, loanInstallmentRequestDto);
         return ResponseEntity.ok(loanInstallmentResponse);
     }
+
+    // Belirli bir loanId'ye göre taksitleri getirme
+    @GetMapping("/by-loan/{loanId}")
+    public ResponseEntity<List<LoanInstallmentResponseDto>> getLoanInstallmentsByLoanId(@PathVariable Long loanId) {
+        List<LoanInstallmentResponseDto> loanInstallments = loanInstallmentService.getLoanInstallmentsByLoanId(loanId);
+        return ResponseEntity.ok(loanInstallments);
+    }
+
 }

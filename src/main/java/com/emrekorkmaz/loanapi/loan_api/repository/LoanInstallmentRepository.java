@@ -25,4 +25,5 @@ public interface LoanInstallmentRepository extends JpaRepository<LoanInstallment
 
     // Belirli bir loanId'ye sahip ve ödeme tarihi belirli bir tarihe yakın taksiti al
     Optional<LoanInstallment> findTopByLoanIdAndDueDateAfterOrderByDueDateAsc(Long loanId, LocalDate dueDate);
+
 }
