@@ -5,9 +5,9 @@ import java.math.BigDecimal;
 
 @Data
 public class PaymentResponseDto {
-    private Long loanId;  // Loan ID
-    private BigDecimal amountPaid;  // Ödenen toplam miktar
-    private int paidInstallments;  // Ödenen taksit sayısı
-    private int totalInstallments;  // Toplam taksit sayısı
-    private boolean loanPaid;  // Loan tamamen ödendi mi?
+    private Long loanId;
+    private BigDecimal amountPaid;
+    private int paidInstallments;
+    private int totalInstallments;
+    private boolean loanPaid;
 }

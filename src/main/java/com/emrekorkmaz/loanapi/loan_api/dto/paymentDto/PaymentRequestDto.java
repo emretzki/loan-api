@@ -5,6 +5,6 @@ import java.math.BigDecimal;
 
 @Data
 public class PaymentRequestDto {
-    private Long loanId;  // Loan ID
-    private BigDecimal amount;  // Ödenecek tutar
+    private Long loanId;
+    private BigDecimal amount;
 }

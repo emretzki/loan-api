@@ -1,5 +1,6 @@
 package com.emrekorkmaz.loanapi.loan_api.dto.loanDto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Getter;
@@ -13,23 +14,16 @@ import java.time.LocalDate;
 public class LoanRequestDto {
 
     @NotNull
-    private Long customerId;  // Müşteri ID'si
+    private Long customerId;
 
     @NotNull
     @Positive
-    private BigDecimal loanAmount;  // Kredi miktarı
+    private BigDecimal loanAmount;
 
     @NotNull
     private int numberOfInstallments;
 
     @NotNull
-    private LocalDate createDate;  // Kredi başlangıç tarihi
-
-    //@NotNull
-    //private Boolean isPaid;
-
-    //@NotNull
-    //@Positive
-    //private BigDecimal interestRate;  // Faiz oranı
-
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private LocalDate createDate;
 }

@@ -11,13 +11,13 @@ import java.time.LocalDate;
 @Setter
 public class LoanInstallmentResponseDto {
 
-    private Long id;  // Taksit ID'si
-    private Long loanId;  // Kredi ID'si
-    private BigDecimal amount;  // Taksit miktarı
-    private BigDecimal paidAmount;  // Ödenen miktar
-    private LocalDate dueDate;  // Ödeme tarihi
-    private LocalDate paymentDate;  // Gerçek ödeme tarihi
-    private Boolean isPaid;  // Ödenip ödenmediği bilgisi
+    private Long id;
+    private Long loanId;
+    private BigDecimal amount;
+    private BigDecimal paidAmount;
+    private LocalDate dueDate;
+    private LocalDate paymentDate;
+    private Boolean isPaid;
 
     public LoanInstallmentResponseDto(LoanInstallment loanInstallment) {
         this.id = loanInstallment.getId();
@@ -30,7 +30,7 @@ public class LoanInstallmentResponseDto {
         if (loanInstallment.getLoan() != null) {
             this.loanId = loanInstallment.getLoan().getId();
         } else {
-            this.loanId = null;  // Müşteri yoksa customerId null
+            this.loanId = null;
         }
     }
 }

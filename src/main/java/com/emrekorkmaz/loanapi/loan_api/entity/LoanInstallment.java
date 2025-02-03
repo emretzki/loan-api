@@ -1,9 +1,11 @@
 package com.emrekorkmaz.loanapi.loan_api.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -16,24 +18,24 @@ import java.time.LocalDate;
 public class LoanInstallment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;  // Primary Key
+    private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "loan_id")  // Foreign Key
+    @JoinColumn(name = "loan_id")
     private Loan loan;
 
     @Column(nullable = false)
-    private BigDecimal amount;  // Taksit miktarı
+    private BigDecimal amount;
 
     @Column(nullable = false)
-    private BigDecimal paidAmount;  // Ödenen miktar
+    private BigDecimal paidAmount;
 
     @Column(nullable = false)
-    private LocalDate dueDate;  // Ödeme tarihi
+    private LocalDate dueDate;
+
+    @Column
+    private LocalDate paymentDate;
 
     @Column(nullable = false)
-    private LocalDate paymentDate;  // Gerçek ödeme tarihi
-
-    @Column(nullable = false)
-    private Boolean isPaid;  // Ödenip ödenmediği bilgisi
+    private Boolean isPaid;
 }

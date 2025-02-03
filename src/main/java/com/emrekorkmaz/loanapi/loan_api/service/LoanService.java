@@ -5,6 +5,7 @@ import com.emrekorkmaz.loanapi.loan_api.dto.loanDto.LoanResponseDto;
 import com.emrekorkmaz.loanapi.loan_api.dto.paymentDto.PaymentRequestDto;
 import com.emrekorkmaz.loanapi.loan_api.dto.paymentDto.PaymentResponseDto;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface LoanService {

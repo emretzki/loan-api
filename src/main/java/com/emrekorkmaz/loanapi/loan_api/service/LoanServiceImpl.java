@@ -31,84 +31,68 @@ public class LoanServiceImpl implements LoanService {
     private final LoanRepository loanRepository;
     private final CustomerRepository customerRepository;
     private final LoanInstallmentRepository loanInstallmentRepository;
+    private final LoanInstallmentService loanInstallmentService;
+    private final LoanServiceHelper loanServiceHelper;
 
     @Autowired
-    public LoanServiceImpl(LoanRepository loanRepository, CustomerRepository customerRepository, LoanInstallmentRepository loanInstallmentRepository) {
+    public LoanServiceImpl(LoanRepository loanRepository, CustomerRepository customerRepository, LoanInstallmentRepository loanInstallmentRepository, LoanInstallmentService loanInstallmentService, LoanServiceHelper loanServiceHelper) {
         this.loanRepository = loanRepository;
         this.loanInstallmentRepository = loanInstallmentRepository;
         this.customerRepository = customerRepository;
+        this.loanInstallmentService = loanInstallmentService;
+        this.loanServiceHelper = loanServiceHelper;
     }
 
     @Override
     public LoanResponseDto createLoan(LoanRequestDto loanRequestDto) {
-        // Müşteri doğrulaması
-        Customer customer = customerRepository.findById(loanRequestDto.getCustomerId())
-                .orElseThrow(() -> new IllegalArgumentException("Customer with ID " + loanRequestDto.getCustomerId() + " not found"));
+        try {
+            Customer customer = customerRepository.findById(loanRequestDto.getCustomerId())
+                    .orElseThrow(() -> new IllegalArgumentException("Customer with ID " + loanRequestDto.getCustomerId() + " not found"));
 
-        // Loan amount alınıyor
-        BigDecimal loanAmount = loanRequestDto.getLoanAmount();
+            BigDecimal loanAmount = loanRequestDto.getLoanAmount();
 
-        // Installment number validation
-        if (!List.of(6, 9, 12, 24).contains(loanRequestDto.getNumberOfInstallments())) {
-            throw new IllegalArgumentException("Installment number must be 6, 9, 12, or 24.");
+            BigDecimal interestRate = loanServiceHelper.getInterestRateForInstallments(loanRequestDto.getNumberOfInstallments());
+
+            BigDecimal totalLoanAmount = loanServiceHelper.calculateTotalLoanAmount(loanAmount, interestRate);
+
+            BigDecimal remainingCredit = loanServiceHelper.calculateRemainingCredit(customer.getCreditLimit(), customer.getUsedCreditLimit());
+
+            if (remainingCredit.compareTo(totalLoanAmount) < 0) {
+                throw new IllegalArgumentException("Customer does not have enough credit limit for this loan.");
+            }
+
+            System.out.println("Customer Credit Limit: " + customer.getCreditLimit());
+            System.out.println("Customer Used Credit Limit: " + customer.getUsedCreditLimit());
+            System.out.println("Remaining Credit: " + remainingCredit);
+            System.out.println("Total Loan Amount: " + totalLoanAmount);
+
+            Loan loan = new Loan();
+            loan.setLoanAmount(totalLoanAmount);
+            loan.setInterestRate(interestRate);
+            loan.setCreateDate(loanRequestDto.getCreateDate());
+            loan.setNumberOfInstallments(loanRequestDto.getNumberOfInstallments());
+            loan.setCustomer(customer);
+            loan.setIsPaid(false);
+
+            Loan savedLoan = loanRepository.save(loan);
+
+            createInstallments(savedLoan.getId(), loanRequestDto.getNumberOfInstallments());
+
+            BigDecimal usedCreditLimit = customer.getUsedCreditLimit().add(totalLoanAmount);
+            customer.setUsedCreditLimit(usedCreditLimit);
+            customerRepository.save(customer);
+
+            return new LoanResponseDto(savedLoan);
+
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            System.err.println("An unexpected error occurred: " + e.getMessage());
+            throw new RuntimeException("An unexpected error occurred while processing the loan request.");
         }
-
-        // Faiz oranını taksite göre güncelleme
-        BigDecimal interestRate;
-        switch (loanRequestDto.getNumberOfInstallments()) {
-            case 6:
-                interestRate = BigDecimal.valueOf(0.1); // 6 taksit için faiz oranı
-                break;
-            case 9:
-                interestRate = BigDecimal.valueOf(0.2); // 9 taksit için faiz oranı
-                break;
-            case 12:
-                interestRate = BigDecimal.valueOf(0.3); // 12 taksit için faiz oranı
-                break;
-            case 24:
-                interestRate = BigDecimal.valueOf(0.4); // 24 taksit için faiz oranı
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid number of installments.");
-        }
-
-        // Total loan amount hesaplama
-        BigDecimal totalLoanAmount = loanAmount.multiply(BigDecimal.ONE.add(interestRate));
-
-        // Credit limit kontrolü
-        BigDecimal remainingCredit = customer.getCreditLimit().subtract(customer.getUsedCreditLimit());
-
-        if (remainingCredit.compareTo(totalLoanAmount) < 0) {
-            throw new IllegalArgumentException("Customer does not have enough credit limit for this loan.");
-        }
-
-        System.out.println("Customer Credit Limit: " + customer.getCreditLimit());
-        System.out.println("Customer Used Credit Limit: " + customer.getUsedCreditLimit());
-        System.out.println("Remaining Credit: " + remainingCredit);
-        System.out.println("Total Loan Amount: " + totalLoanAmount);
-
-        // Create the loan
-        Loan loan = new Loan();
-        loan.setLoanAmount(totalLoanAmount);
-        loan.setInterestRate(interestRate);
-        loan.setCreateDate(loanRequestDto.getCreateDate());
-        loan.setNumberOfInstallments(loanRequestDto.getNumberOfInstallments());
-        loan.setCustomer(customer);
-        loan.setIsPaid(false);
-
-        // Save the loan
-        Loan savedLoan = loanRepository.save(loan);
-
-        // Create installments
-        createInstallments(savedLoan.getId(), loanRequestDto.getNumberOfInstallments());
-
-        // Update customer's used credit limit
-        BigDecimal usedCreditLimit = customer.getUsedCreditLimit().add(totalLoanAmount);
-        customer.setUsedCreditLimit(usedCreditLimit);
-        customerRepository.save(customer);
-
-        return new LoanResponseDto(savedLoan);
     }
+
 
     @Override
     public List<LoanResponseDto> getAllLoans() {
@@ -148,150 +132,101 @@ public class LoanServiceImpl implements LoanService {
         Loan loan = loanRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Loan with ID " + id + " not found"));
 
-        // Güncelleme işlemleri
         loan.setLoanAmount(loanRequestDto.getLoanAmount());
         loan.setCreateDate(loanRequestDto.getCreateDate());
 
-        // Müşteri doğrulaması
         Customer customer = customerRepository.findById(loanRequestDto.getCustomerId())
                 .orElseThrow(() -> new IllegalArgumentException("Customer with ID " + loanRequestDto.getCustomerId() + " not found"));
         loan.setCustomer(customer);
 
-        // Güncellenmiş loan'ı kaydedelim ve döndürelim
         Loan updatedLoan = loanRepository.save(loan);
         return new LoanResponseDto(updatedLoan);
     }
 
     @Override
     public void createInstallments(Long loanId, int numberOfInstallments) {
-        // Kredi ve taksit sayısını alıyoruz
         Loan loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new IllegalArgumentException("Loan with ID " + loanId + " not found"));
 
-        BigDecimal installmentAmount = loan.getLoanAmount().divide(BigDecimal.valueOf(numberOfInstallments), 2, RoundingMode.HALF_UP);
-
-        // İlk taksit tarihi, loan createDate'in 1. günü olacak şekilde ayarlanır
-        LocalDate dueDate = loan.getCreateDate().withDayOfMonth(1).plusMonths(1); // İlk taksit 1. gün
-
-        for (int i = 1; i <= numberOfInstallments; i++) {
-            LoanInstallment installment = new LoanInstallment();
-            installment.setLoan(loan);
-            installment.setAmount(installmentAmount);
-            installment.setDueDate(dueDate);
-            installment.setIsPaid(false);  // Başlangıçta ödenmemiş olarak
-            installment.setPaidAmount(BigDecimal.ZERO);  // Ödenen tutar sıfır
-            installment.setPaymentDate(dueDate);  // Ödeme tarihi, taksitin vade tarihi olmalı
-
-            loanInstallmentRepository.save(installment);
-
-            // Taksit tarihini bir sonraki ayın 1. günü olarak güncelle
-            dueDate = dueDate.plusMonths(1);
-        }
+        loanInstallmentService.createInstallments(loan, numberOfInstallments);
     }
 
-    @Override
-    @Transactional
     public PaymentResponseDto payLoan(PaymentRequestDto paymentRequest) {
-        System.out.println(">>> Ödeme işlemi başlatıldı...");
+        try {
+            Loan loan = loanRepository.findById(paymentRequest.getLoanId())
+                    .orElseThrow(() -> new RuntimeException("Loan not found"));
 
-        Loan loan = loanRepository.findById(paymentRequest.getLoanId())
-                .orElseThrow(() -> new RuntimeException("Loan not found"));
+            List<LoanInstallment> installments = loanInstallmentRepository.findByLoanIdAndIsPaidFalse(loan.getId());
 
-        List<LoanInstallment> installments = loanInstallmentRepository.findByLoanId(loan.getId());
+            BigDecimal amountToPay = paymentRequest.getAmount();
+            int paidInstallmentsCount = 0;
 
-        System.out.println(">>> Loan ID: " + loan.getId() + " için " + installments.size() + " taksit bulundu.");
+            installments.sort(Comparator.comparing(LoanInstallment::getDueDate));
 
-        BigDecimal amountToPay = paymentRequest.getAmount();
-        int paidInstallmentsCount = 0;
+            LocalDate threeMonthsLater = LocalDate.now().plusMonths(3);
+            List<LoanInstallment> payableInstallments = installments.stream()
+                    .filter(installment -> !installment.getDueDate().isBefore(LocalDate.now())
+                            && installment.getDueDate().isBefore(threeMonthsLater))
+                    .collect(Collectors.toList());
 
-        System.out.println(">>> Ödenecek Tutar: " + amountToPay);
+            for (LoanInstallment installment : payableInstallments) {
+                if (installment.getIsPaid()) {
+                    continue;
+                }
 
-        installments.sort(Comparator.comparing(LoanInstallment::getDueDate));
+                BigDecimal remainingAmount = installment.getAmount();
 
-        LocalDate threeMonthsLater = LocalDate.now().plusMonths(3);
-        List<LoanInstallment> payableInstallments = installments.stream()
-                .filter(installment -> !installment.getDueDate().isBefore(LocalDate.now())
-                        && installment.getDueDate().isBefore(threeMonthsLater)).collect(Collectors.toList());
+                // Check if the installment is paid before the due date
+                long daysBeforeDue = ChronoUnit.DAYS.between(LocalDate.now(), installment.getDueDate());
+                if (daysBeforeDue > 0) {
+                    // Discount for paying early
+                    BigDecimal discount = installment.getAmount().multiply(BigDecimal.valueOf(0.001)).multiply(BigDecimal.valueOf(daysBeforeDue));
+                    remainingAmount = remainingAmount.subtract(discount);
+                } else {
+                    // Check if the installment is paid after the due date
+                    long daysAfterDue = ChronoUnit.DAYS.between(installment.getDueDate(), LocalDate.now());
+                    if (daysAfterDue > 0) {
+                        // Penalty for paying late
+                        BigDecimal penalty = installment.getAmount().multiply(BigDecimal.valueOf(0.001)).multiply(BigDecimal.valueOf(daysAfterDue));
+                        remainingAmount = remainingAmount.add(penalty);
+                    }
+                }
 
-        System.out.println(">>> 3 ay içinde vadesi gelen taksitler: " + payableInstallments.size());
+                if (amountToPay.compareTo(remainingAmount) >= 0) {
+                    installment.setPaidAmount(remainingAmount);
+                    amountToPay = amountToPay.subtract(remainingAmount);
+                    installment.setIsPaid(true);
+                    installment.setPaymentDate(LocalDate.now());
+                    loanInstallmentRepository.save(installment);
+                    paidInstallmentsCount++;
+                } else {
+                    break;
+                }
 
-        LocalDate paymentDate = LocalDate.now(); // Ödeme tarihi
-
-        for (LoanInstallment installment : payableInstallments) {
-            System.out.println(">>> Kontrol Edilen Taksit ID: " + installment.getId());
-            System.out.println("    - Due Date: " + installment.getDueDate());
-            System.out.println("    - Is Paid: " + installment.getIsPaid());
-
-            if (installment.getIsPaid()) {
-                System.out.println("    - Taksit zaten ödenmiş, geçiliyor.");
-                continue;
+                if (amountToPay.compareTo(BigDecimal.ZERO) == 0) {
+                    break;
+                }
             }
 
-            BigDecimal installmentAmount = installment.getAmount();
-            BigDecimal discount = BigDecimal.ZERO;
-            BigDecimal penalty = BigDecimal.ZERO;
-
-            long daysDifference = ChronoUnit.DAYS.between(installment.getDueDate(), paymentDate);
-
-            if (daysDifference < 0) {
-                // Erken ödeme indirimi
-                long daysEarly = Math.abs(daysDifference);
-                discount = installmentAmount.multiply(BigDecimal.valueOf(0.001))
-                        .multiply(BigDecimal.valueOf(daysEarly));
-
-                System.out.println("    - Erken Ödeme: " + daysEarly + " gün önce. İndirim: " + discount);
-            } else if (daysDifference > 0) {
-                // Geç ödeme cezası
-                long daysLate = daysDifference;
-                penalty = installmentAmount.multiply(BigDecimal.valueOf(0.001))
-                        .multiply(BigDecimal.valueOf(daysLate));
-
-                System.out.println("    - Geç Ödeme: " + daysLate + " gün sonra. Ceza: " + penalty);
+            boolean allInstallmentsPaid = installments.stream().allMatch(LoanInstallment::getIsPaid);
+            if (allInstallmentsPaid) {
+                loan.setIsPaid(true);
+                loanRepository.save(loan);
             }
 
-            // Ödenecek miktarı hesapla
-            BigDecimal adjustedInstallmentAmount = installmentAmount.subtract(discount).add(penalty);
-            BigDecimal remainingAmount = adjustedInstallmentAmount.subtract(installment.getPaidAmount());
+            PaymentResponseDto response = new PaymentResponseDto();
+            response.setLoanId(loan.getId());
+            response.setAmountPaid(paymentRequest.getAmount().subtract(amountToPay));
+            response.setPaidInstallments(paidInstallmentsCount);
+            response.setTotalInstallments(installments.size());
+            response.setLoanPaid(loan.getIsPaid());
 
-            System.out.println("    - Güncellenmiş Borç: " + remainingAmount);
+            return response;
 
-            if (amountToPay.compareTo(remainingAmount) >= 0) {
-                installment.setPaidAmount(adjustedInstallmentAmount);
-                amountToPay = amountToPay.subtract(remainingAmount);
-                installment.setIsPaid(true);
-                System.out.println("    - Taksit tamamen ödendi.");
-            } else {
-                System.out.println("    - Yeterli ödeme miktarı yok, bu taksit ödenemedi.");
-                break;
-            }
-
-            loanInstallmentRepository.save(installment);
-            paidInstallmentsCount++;
-
-            System.out.println(">>> Güncellenen Taksit ID: " + installment.getId() + " için kalan ödeme: " + amountToPay);
-
-            if (amountToPay.compareTo(BigDecimal.ZERO) == 0) {
-                System.out.println(">>> Tüm ödeme tamamlandı, döngüden çıkılıyor.");
-                break;
-            }
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("An unexpected error occurred during the payment process.");
         }
-
-        boolean allInstallmentsPaid = installments.stream().allMatch(LoanInstallment::getIsPaid);
-        if (allInstallmentsPaid) {
-            loan.setIsPaid(true);
-            loanRepository.save(loan);
-            System.out.println(">>> Tüm taksitler ödendi, loan kapandı.");
-        }
-
-        PaymentResponseDto response = new PaymentResponseDto();
-        response.setLoanId(loan.getId());
-        response.setAmountPaid(paymentRequest.getAmount().subtract(amountToPay));
-        response.setPaidInstallments(paidInstallmentsCount);
-        response.setTotalInstallments(installments.size());
-        response.setLoanPaid(loan.getIsPaid());
-
-        System.out.println(">>> Ödeme İşlemi Tamamlandı: " + response);
-
-        return response;
     }
 }

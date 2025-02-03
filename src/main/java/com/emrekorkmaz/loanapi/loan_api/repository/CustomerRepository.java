@@ -11,12 +11,9 @@ import java.util.Optional;
 @Repository
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
-    // Ad ve soyada göre müşteri arama
     Optional<Customer> findByNameAndSurname(String name, String surname);
 
-    // Belirli bir kredi limitine sahip müşterileri bulma
     List<Customer> findByCreditLimitGreaterThan(BigDecimal creditLimit);
 
-    // ID ve limit kontrolü
     Optional<Customer> findByIdAndCreditLimitGreaterThanEqual(Long id, BigDecimal creditLimit);
 }
