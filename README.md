@@ -9,10 +9,6 @@ Loan API is a Spring Boot-based RESTful API that allows customers to create loan
 - Maven
 - Swagger UI for API documentation
 
-## API Documentation
-Once the project is running, API documentation can be accessed at:
-[Swagger UI](http://localhost:8080/swagger-ui/index.html#/)
-
 ## Initialization
 During the initialization phase, three default customers are created. All loan creation and payment transactions must be performed using these customers.
 
@@ -55,6 +51,10 @@ You can use the provided Postman collection for easier API testing.
 
 ## Running the API Locally
 Once the application is running, you can interact with the API via Swagger UI or directly using tools like Postman or cURL.
+
+## API Documentation
+Once the project is running, API documentation can be accessed at:
+[Swagger UI](http://localhost:8080/swagger-ui/index.html#/)
 
 ---
 
