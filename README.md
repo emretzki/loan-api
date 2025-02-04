@@ -43,6 +43,13 @@ mvn clean install
 mvn spring-boot:run
 ```
 
+### Authentication
+The API requires Basic Authentication:
+```sh
+Username: admin
+Password: admin
+```
+
 Postman Collection
 
 You can use the provided Postman collection for easier API testing.
